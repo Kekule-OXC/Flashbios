@@ -32,8 +32,6 @@
 #ifndef __ARCH_CC_H__
 #define __ARCH_CC_H__
 
-/* Include some files for defining library routines */
-#include <string.h>
 
 /* Define platform endianness */
 #ifndef BYTE_ORDER
@@ -51,7 +49,7 @@ typedef signed     long    s32_t;
 typedef u32_t mem_ptr_t;
 
 /* Compiler hints for packing structures */
-#define PACK_STRUCT_FIELD(x) x __attribute__((packed))
+#define PACK_STRUCT_FIELD(x) x
 #define PACK_STRUCT_STRUCT __attribute__((packed))
 #define PACK_STRUCT_BEGIN
 #define PACK_STRUCT_END

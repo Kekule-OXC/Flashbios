@@ -22,6 +22,7 @@ SECTIONS {
 	.text LOW_ROM : AT ( 0 ){
 		_start_low_rom = . ;
 		*(.text);
+		*(.text.unlikely);
 		_end_low_rom = . ;
 	}
 
@@ -29,6 +30,7 @@ SECTIONS {
 		*(.rodata);
 		*(.rodata.str1.1);
 		*(.rodata.str1.32);
+		*(.rodata.str1.4);
 		*(.rodata.cst4);
 		*(.rodata.cst8);
 		_start_backdrop = .;
@@ -64,6 +66,8 @@ SECTIONS {
 		_heap = . ;
 	}
 	
-	_end_compleate_rom = SIZEOF(.text) + SIZEOF(.rodata) + SIZEOF(.data) + SIZEOF(.bss);
+	/DISCARD/ : { *(.eh_frame) }
+	
+	_end_complete_rom = SIZEOF(.text) + SIZEOF(.rodata) + SIZEOF(.data) + SIZEOF(.bss);
 
 }

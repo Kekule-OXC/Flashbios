@@ -282,7 +282,7 @@ extern void BootResetAction ( void ) {
         printk("\n");
 #endif
 
-	printk("\2FlashBIOS 3.0.3-unauthorized\n\n");
+	printk("\2"PROG_NAME" "VERSION"\n\n");
 	printk("Based on Cromwell (C)2002-2004 Xbox Linux Team - Licensed under the GPL\n");
         printk("Danger!  Flashing option may destroy your XBOX.\n");
         printk("Now with support for *many* more FlashROMs!\n");
@@ -454,7 +454,7 @@ extern void BootResetAction ( void ) {
 					VIDEO_ATTR=0xffe8e8e8;
 					printk("MBR Partition Table:\n");
 #endif
-					(volatile BYTE *)pb=&ba[0x1be];
+					pb=&ba[0x1be];
 					n=0; nPos=0;
 					while(n<4) {
 #ifdef DISPLAY_MBR_INFO

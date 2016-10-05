@@ -21,6 +21,11 @@ void mdelay(unsigned int msecs)
 	}
 }
 
+inline int timer2_running(void)
+{
+    return 0;
+}
+
 void waiton_timer2(unsigned int ticks)
 {
 	load_timer2(ticks);

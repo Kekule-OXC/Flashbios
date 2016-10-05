@@ -29,7 +29,6 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-
 #include "lwip/debug.h"
 
 #include "lwip/stats.h"
@@ -37,6 +36,7 @@
 /*#include "httpd.h"*/
 
 #include "lwip/tcp.h"
+
 
 struct http_state {
 	unsigned char retries;

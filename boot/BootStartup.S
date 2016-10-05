@@ -33,7 +33,7 @@ Cromwellconfig:
         .long 0x0	// 0x28 Bank, from where Loaded
         .long 0x0	// 0x2C 0 .. Bios = 256 k, 1 .. Bios = 1MB 
         .long 0x0	// 0x30 free
-        .long _end_compleate_rom       // 0x34 free
+        .long _end_complete_rom       // 0x34 free
         .long 0x0       // 0x38 free
         .long 0x0	// free
 	

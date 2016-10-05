@@ -333,20 +333,20 @@ bool BootVideoJpegUnpackAsRgb(
   (void) jpeg_start_decompress(&cinfo);
 
   row_stride = cinfo.output_width * cinfo.output_components;
-	(BYTE *)pbaResultAsRgb=(BYTE *)malloc(row_stride * cinfo.output_height);
-	(BYTE *)pbaResultAsRgbStart=pbaResultAsRgb;
+    pbaResultAsRgb=(BYTE *)malloc(row_stride * cinfo.output_height);
+    pbaResultAsRgbStart=pbaResultAsRgb;
 
-	//printk("0x%x, 0x%x, %d, %d, %d, 0x%x, 0x%x\n",
-	//	(DWORD)pbaJpegFileImage, nFileLength, cinfo.output_width,  cinfo.output_height, cinfo.output_components,
-	//	row_stride, (DWORD)pbaResultAsRgb
-	//);
+    //printk("0x%x, 0x%x, %d, %d, %d, 0x%x, 0x%x\n",
+    //	(DWORD)pbaJpegFileImage, nFileLength, cinfo.output_width,  cinfo.output_height, cinfo.output_components,
+    //	row_stride, (DWORD)pbaResultAsRgb
+    //);
 
-	buffer = (*(cinfo.mem->alloc_sarray))((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
+    buffer = (*(cinfo.mem->alloc_sarray))((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
 
-	pJpeg->m_nWidth=cinfo.output_width;
-	pJpeg->m_nHeight=cinfo.output_height;
-	pJpeg->m_nBytesPerPixel=cinfo.output_components;
-	pJpeg->m_pBitmapData=pbaResultAsRgbStart;
+    pJpeg->m_nWidth=cinfo.output_width;
+    pJpeg->m_nHeight=cinfo.output_height;
+    pJpeg->m_nBytesPerPixel=cinfo.output_components;
+    pJpeg->m_pBitmapData=pbaResultAsRgbStart;
       
 
 //	printk("jpeg bpp=%d\n",pJpeg->m_nBytesPerPixel);

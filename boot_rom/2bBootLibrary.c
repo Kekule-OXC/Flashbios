@@ -7,54 +7,50 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************
-
 */
+// 20040924 - Updated by dmp to include more str functions, and use ASM
+// where possible. ASM shamelessly stolen from linux-2.6.8.1
 
-#include "2bload.h"
+#include "stdint.h"
 
-void * memcpy(void *dest, const void *src,  size_t size) {
-
-#if 0
-	BYTE * pb=(BYTE *)src, *pbd=(BYTE *)dest;
-	while(size--) *pbd++=*pb++;
-
-#else
-		__asm__ __volatile__ (
-              "    push %%esi    \n"
-              "    push %%edi    \n"
-              "    push %%ecx    \n"
-              "    cld    \n"
-              "    mov %0, %%esi \n"
-              "    mov %1, %%edi \n"
-              "    mov %2, %%ecx \n"
-              "    push %%ecx    \n"
-              "    shr $2, %%ecx \n"
-              "    rep movsl     \n"
-              "    pop %%ecx     \n"
-              "    and $3, %%ecx \n"
-              "    rep movsb     \n"
-              : :"S" (src), "D" (dest), "c" (size)
-		);
-
-		__asm__ __volatile__ (
-	      "    pop %ecx     \n"
-              "    pop %edi     \n"
-              "    pop %esi     \n"
-		);
-#endif
-}
-
-void * memset(void *dest, int data,  size_t size)
+void *memcpy (void *__restrict __dest, const void *__restrict __src, size_t __n)
 {
-  	char *p = dest;
-	while (size -- > 0)
-	{
-		*p ++ = data;
-	}
+    int d0, d1, d2;
+    __asm__ __volatile__(
+               "rep ; movsl\n\t"
+               "testb $2,%b4\n\t"
+              "je 1f\n\t"
+               "movsw\n"
+              "1:\ttestb $1,%b4\n\t"
+             "je 2f\n\t"
+             "movsb\n"
+               "2:"
+             : "=&c" (d0), "=&D" (d1), "=&S" (d2)
+        :"0" (__n/4), "q" (__n),"1" ((long) __dest),"2" ((long) __src)
+               : "memory");
+    return (__dest);
 }
 
-int _memcmp(const BYTE *pb, const BYTE *pb1, int n) {
-	while(n--) { if(*pb++ != *pb1++) return 1; }
-	return 0;
+void *memset (void *__s, int __c, size_t __n)
+{
+      int d0, d1;
+    __asm__ __volatile__(
+            "rep\n\t"
+            "stosb"
+            : "=&c" (d0), "=&D" (d1)
+            :"a" (__c),"1" (__s),"0" (__n)
+            :"memory");
+    return __s;
+}
+                
+
+int memcmp(const void * cs,const void * ct,size_t count)
+{
+        const unsigned char *su1, *su2;
+        int res = 0;
+
+    for( su1 = cs, su2 = ct; 0 < count; ++su1, ++su2, count--)
+        if ((res = *su1 - *su2) != 0) break;
+    return res;
 }
 

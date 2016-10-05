@@ -3,6 +3,7 @@
 #include "lwip/mem.h"
 #include "netif/etharp.h"
 #include "lwip/tcp.h"
+#include "boot.h"
 
 struct eth_addr ethaddr= {0,0x0d,0xff,0xff,0,0};
 

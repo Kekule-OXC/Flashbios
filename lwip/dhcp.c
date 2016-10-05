@@ -67,6 +67,7 @@
  * to remove the DHCP client.
  *
  */
+#include "boot.h"
 #include "lwip/stats.h"
 #include "lwip/mem.h"
 #include "lwip/udp.h"

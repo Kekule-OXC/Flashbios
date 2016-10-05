@@ -1,6 +1,8 @@
-CC	= gcc-3.3
+CC	= gcc
 # prepare check for gcc 3.3, $(GCC_3.3) will either be 0 or 1
 GCC_3.3 := $(shell expr `$(CC) -dumpversion` \>= 3.3)
+
+GCC_4.2 := $(shell expr `$(CC) -dumpversion` \>= 4.2)
 
 ETHERBOOT:=yes 
 INCLUDE = -I$(TOPDIR)/grub -I$(TOPDIR)/include -I$(TOPDIR)/ -I./ -I$(TOPDIR)/fs/cdrom \
@@ -8,12 +10,20 @@ INCLUDE = -I$(TOPDIR)/grub -I$(TOPDIR)/include -I$(TOPDIR)/ -I./ -I$(TOPDIR)/fs/
 	-I$(TOPDIR)/drivers/video -I$(TOPDIR)/drivers/ide -I$(TOPDIR)/drivers/flash -I$(TOPDIR)/lib/misc \
 	-I$(TOPDIR)/boot_xbe/ -I$(TOPDIR)/fs/grub -I$(TOPDIR)/lib/font -I$(TOPDIR)/lib/jpeg-6b \
 	-I$(TOPDIR)/startuploader -I$(TOPDIR)/drivers/cpu
+	
+#These are intended to be non-overridable.
+CROM_CFLAGS=$(INCLUDE)
 
-CFLAGS	= -O2 -mcpu=pentium -Werror $(INCLUDE) -Wstrict-prototypes -fomit-frame-pointer -pipe
+#You can override these if you wish.
+CFLAGS= -O2 -march=pentium -m32 -pipe -fomit-frame-pointer -Wstrict-prototypes -DIPv4 -fpack-struct -Wreturn-type -ffreestanding
 
-# add the option for gcc 3.3 only
+# add the option for gcc 3.3 only, again, non-overridable
 ifeq ($(GCC_3.3), 1)
-CFLAGS += -fno-zero-initialized-in-bss
+CROM_CFLAGS += -fno-zero-initialized-in-bss
+endif
+
+ifeq ($(GCC_4.2), 1)
+CROM_CFLAGS += -fno-stack-protector -U_FORTIFY_SOURCE
 endif
 
 LD      = ld
@@ -26,9 +36,12 @@ SUBDIRS	= boot_rom fs drivers lib boot
 #### Etherboot specific stuff
 #ifeq ($(ETHERBOOT), yes)
 ETH_SUBDIRS = etherboot
-CFLAGS	+= -DETHERBOOT
+CROM_CFLAGS	+= -DETHERBOOT
 ETH_INCLUDE = 	-I$(TOPDIR)/etherboot/include -I$(TOPDIR)/etherboot/arch/i386/include	
-ETH_CFLAGS  = 	-O2 -mcpu=pentium -Werror $(ETH_INCLUDE) -Wstrict-prototypes -fomit-frame-pointer -pipe -Ui386
+ETH_CFLAGS  = 	-O2 -march=pentium -m32 -Werror -Wreturn-type $(ETH_INCLUDE) -Wstrict-prototypes -fomit-frame-pointer -pipe -ffreestanding
+ifeq ($(GCC_4.2), 1)
+ETH_CFLAGS += -fno-stack-protector -U_FORTIFY_SOURCE
+endif
 #endif
 
 LDFLAGS-ROM     = -s -S -T $(TOPDIR)/scripts/ldscript-crom.ld
@@ -175,7 +188,8 @@ BOOT_ETH_DIR = boot_eth/ethboot
 BOOT_ETH_SUBDIRS = ethsubdirs
 #endif
 
-all: clean resources $(BOOT_ETH_SUBDIRS) cromsubdirs default.xbe vmlboot $(BOOT_ETH_DIR) image.bin imagecompress 
+all: clean
+	@$(MAKE) -j16 --no-print-directory resources $(BOOT_ETH_SUBDIRS) cromsubdirs xbeboot xromwell.xbe vml_startup vmlboot $(BOOT_ETH_DIR) obj/image-crom.bin cromwell.bin imagecompress 256KBBinGen
 
 #ifeq ($(ETHERBOOT), yes)
 ethsubdirs: $(patsubst %, _dir_%, $(ETH_SUBDIRS))
@@ -185,7 +199,7 @@ $(patsubst %, _dir_%, $(ETH_SUBDIRS)) : dummy
 
 cromsubdirs: $(patsubst %, _dir_%, $(SUBDIRS))
 $(patsubst %, _dir_%, $(SUBDIRS)) : dummy
-	$(MAKE) CFLAGS="$(CFLAGS)" -C $(patsubst _dir_%, %, $@)
+	$(MAKE) CFLAGS="$(CFLAGS) $(CROM_CFLAGS)" -C $(patsubst _dir_%, %, $@)
 
 dummy:
 
@@ -193,10 +207,7 @@ resources:
 	# Background
 	${LD} -r --oformat elf32-i386 -o $(TOPDIR)/obj/backdrop.elf -T $(TOPDIR)/scripts/backdrop.ld -b binary $(TOPDIR)/pics/backdrop.jpg	
 	${LD} -r --oformat elf32-i386 -o $(TOPDIR)/obj/pcrombios.elf -T $(TOPDIR)/scripts/pcrombios.ld -b binary $(TOPDIR)/pcbios/rombios.bin
-
-install:
-	lmilk -f -p $(TOPDIR)/image/image.bin
-	lmilk -f -a c0000 -p $(TOPDIR)/image/image.bin -q	
+	
 clean:
 	find . \( -name '*.[oas]' -o -name core -o -name '.*.flags' \) -type f -print \
 		| grep -v lxdialog/ | xargs rm -f
@@ -227,39 +238,50 @@ clean:
 #	${LD} -r --oformat elf32-i386 -o $@ -T rombios.ld -b binary rombios.bin
 
  
-obj/image-crom.bin:
-	${LD} -o obj/image-crom.elf ${OBJECTS-CROM} ${RESOURCES} ${LDFLAGS-ROM}
+obj/image-crom.bin: cromsubdirs resources
+	${LD} -o obj/image-crom.elf ${OBJECTS-CROM} ${RESOURCES} ${LDFLAGS-ROM} -Map $(TOPDIR)/obj/image-crom.map
 	${OBJCOPY} --output-target=binary --strip-all obj/image-crom.elf $@
 
-vmlboot: ${OBJECTS-VML}
+vmlboot: vml_startup 
 	${LD} -o $(TOPDIR)/obj/vmlboot.elf ${OBJECTS-VML} ${LDFLAGS-VMLBOOT}
 	${OBJCOPY} --output-target=binary --strip-all $(TOPDIR)/obj/vmlboot.elf $(TOPDIR)/boot_vml/disk/$@
+	
+vml_startup:
+	$(CC) ${CFLAGS} -c -o ${OBJECTS-VML} boot_vml/vml_Startup.S
 
 #ifeq ($(ETHERBOOT), yes)
-boot_eth/ethboot: ${OBJECTS-ETH} obj/image-crom.bin
-	${LD} -o obj/ethboot.elf ${OBJECTS-ETH} -b binary obj/image-crom.bin ${LDFLAGS-ETHBOOT}
+boot_eth/ethboot: ethboot obj/image-crom.bin
+	${LD} -o obj/ethboot.elf ${OBJECTS-ETH} -b binary obj/image-crom.bin ${LDFLAGS-ETHBOOT} -Map $(TOPDIR)/obj/ethboot.map
 	${OBJCOPY} --output-target=binary --strip-all obj/ethboot.elf obj/ethboot.bin
 	perl -I boot_eth boot_eth/mknbi.pl --output=$@ obj/ethboot.bin
+	
+ethboot:
+	$(CC) ${CFLAGS} -c -o ${OBJECTS-ETH} boot_eth/eth_Startup.S
 #endif
 
-default.xbe: ${OBJECTS-XBE}
-	${LD} -o $(TOPDIR)/obj/default.elf ${OBJECTS-XBE} ${LDFLAGS-XBEBOOT}
-	${OBJCOPY} --output-target=binary --strip-all $(TOPDIR)/obj/default.elf $(TOPDIR)/xbe/$@
+xromwell.xbe: xbeboot
+	${LD} -o $(TOPDIR)/obj/xbeboot.elf ${OBJECTS-XBE} ${LDFLAGS-XBEBOOT}
+	${OBJCOPY} --output-target=binary --strip-all $(TOPDIR)/obj/xbeboot.elf $(TOPDIR)/xbe/flashBIOS.xbe
+	
+xbeboot:
+	$(CC) ${CFLAGS} -c -o ${OBJECTS-XBE} boot_xbe/xbeboot.S
 
-image.bin:
-	${LD} -o $(TOPDIR)/obj/2lbimage.elf ${OBJECTS-ROMBOOT} ${LDFLAGS-ROMBOOT}
+cromwell.bin: cromsubdirs
+	${LD} -o $(TOPDIR)/obj/2lbimage.elf ${OBJECTS-ROMBOOT} ${LDFLAGS-ROMBOOT} -Map $(TOPDIR)/obj/2lbimage.map
 	${OBJCOPY} --output-target=binary --strip-all $(TOPDIR)/obj/2lbimage.elf $(TOPDIR)/obj/2blimage.bin
 
 # This is a local executable, so don't use a cross compiler...
-bin/imagebld: lib/imagebld/imagebld.c lib/crypt/sha1.c
+bin/imagebld:
 	gcc -Ilib/crypt -o bin/sha1.o -c lib/crypt/sha1.c
+	gcc -Ilib/crypt -o bin/md5.o -c lib/crypt/md5.c
 	gcc -Ilib/crypt -o bin/imagebld.o -c lib/imagebld/imagebld.c
-	gcc -o bin/imagebld bin/imagebld.o bin/sha1.o 
-
+	gcc -o bin/imagebld bin/imagebld.o bin/sha1.o bin/md5.o
+	
 imagecompress: obj/image-crom.bin bin/imagebld
-	cp obj/image-crom.bin obj/image-crom.bin.tmp
-	gzip -9 obj/image-crom.bin.tmp
-	bin/imagebld -rom obj/2blimage.bin obj/image-crom.bin.tmp.gz image/image.bin image/image_1024.bin
-	bin/imagebld -xbe xbe/default.xbe obj/image-crom.bin
-	bin/imagebld -vml boot_vml/disk/vmlboot obj/image-crom.bin 
+	cp obj/image-crom.bin obj/c
+	gzip -9 obj/c
+	bin/imagebld -xbe xbe/flashBIOS.xbe obj/image-crom.bin
+	bin/imagebld -vml boot_vml/disk/vmlboot obj/image-crom.bin f
 
+256KBBinGen: imagecompress cromwell.bin
+	bin/imagebld -rom obj/2blimage.bin obj/c.gz image/cromwell.bin

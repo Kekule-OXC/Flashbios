@@ -57,6 +57,7 @@ int etherboot(void)
 			eth_load(dev);
 		}
 	}
+    return 0;
 }
 
 int pcibios_read_config_byte(unsigned int bus, unsigned int device_fn, unsigned int where, uint8_t *value)
@@ -114,6 +115,8 @@ unsigned long currticks(void)
 {
 	return IoInputDword(0x8008);
 }
+
+extern void wait_us(unsigned int ticks);
 
 void ndelay(unsigned int nsecs)
 {

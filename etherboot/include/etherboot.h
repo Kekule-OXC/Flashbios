@@ -172,13 +172,13 @@ struct rom_info {
 	unsigned short	rom_segment;
 	unsigned short	rom_length;
 };
-
+#if 0
 extern inline int rom_address_ok(struct rom_info *rom, int assigned_rom_segment)
 {
 	return (assigned_rom_segment < 0xC000
 		|| assigned_rom_segment == rom->rom_segment);
 }
-
+#endif
 
 /* Define a type for passing info to a loaded program */
 struct ebinfo {
@@ -413,6 +413,7 @@ extern char freebsd_kernel_env[FREEBSD_KERNEL_ENV_SIZE];
 /* osloader.c */
 
 /* xbox.c */
+extern int printk(const char *szFormat, ...);
 #define printf printk
 #define longjmp(a,b) a(b)
 extern void restart_etherboot(int);

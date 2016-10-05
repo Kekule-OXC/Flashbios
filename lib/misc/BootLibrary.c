@@ -107,6 +107,35 @@ char * _strncpy (char * dest,const char * src, size_t n)
 	return szStart;
 }
 
+int strcmp(const char* s1,const char* s2)
+{
+   while (*s1 == *s2++)
+       if (*s1++ == 0)
+           return (0);
+   return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
+}
+
+int strncmp(const char * cs,const char * ct,size_t count)
+{
+    register int __res;
+    int d0, d1, d2;
+    __asm__ __volatile__(
+        "1:\tdecl %3\n\t"
+        "js 2f\n\t"
+        "lodsb\n\t"
+        "scasb\n\t"
+        "jne 3f\n\t"
+        "testb %%al,%%al\n\t"
+        "jne 1b\n"
+        "2:\txorl %%eax,%%eax\n\t"
+        "jmp 4f\n"
+        "3:\tsbbl %%eax,%%eax\n\t"
+        "orb $1,%%al\n"
+        "4:"
+            :"=a" (__res), "=&S" (d0), "=&D" (d1), "=&c" (d2)
+            :"1" (cs),"2" (ct),"3" (count));
+    return __res;
+}
 
 int _strncmp(const char *sz1, const char *sz2, int nMax) 
 {
@@ -190,6 +219,23 @@ void MemoryManagementInitialization(void * pvStartAddress, DWORD dwTotalMemoryAl
 	return ;
 }
 
+
+/*Because GCC 5 replaces malloc+memset into calloc
+ * and it wasn't defined in the project. There doesn't
+ * seem to be any switch to disable this behavior.
+ */
+void *
+calloc(size_t nelem, size_t elsize)
+{
+    register void *p;
+
+    p = malloc (nelem * elsize);
+    if (p == 0)
+        return (p);
+
+    memset (p, 0x00, nelem * elsize);
+    return (p);
+}
 
 void * t_malloc(size_t size)
 {
