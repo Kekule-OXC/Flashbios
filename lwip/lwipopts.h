@@ -43,7 +43,7 @@
 
 /* MEM_SIZE: the size of the heap memory. If the application will send
 a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE                10000
+#define MEM_SIZE                262144 //10000
 
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
@@ -60,7 +60,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_TCP_PCB_LISTEN 8
 /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
    segments. */
-#define MEMP_NUM_TCP_SEG        64
+#define MEMP_NUM_TCP_SEG        361 //64
 
 /* The following four are used only with the sequential API and can be
    set to 0 if the application only will use the raw API. */
@@ -89,7 +89,7 @@ a lot of data that needs to be copied, this should be set high. */
 
 /* PBUF_LINK_HLEN: the number of bytes that should be allocated for a
    link level header. */
-#define PBUF_LINK_HLEN          16
+#define PBUF_LINK_HLEN          18 //16
 
 /* ---------- TCP options ---------- */
 #define LWIP_TCP                1
@@ -110,7 +110,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_SND_QUEUELEN        4 * TCP_SND_BUF/TCP_MSS
 
 /* TCP receive window. */
-#define TCP_WND                 512
+#define TCP_WND                 45 * TCP_MSS //512
 
 /* Maximum number of retransmissions of data segments. */
 #define TCP_MAXRTX              12
