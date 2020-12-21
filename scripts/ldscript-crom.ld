@@ -17,12 +17,15 @@ LOW_ROM = 0x03A00000; /* 58MB */
 
 SECTIONS {
 
+/DISCARD/ : { *(.note.gnu.property) }
+
 		/* ROM allocations */
 
 	.text LOW_ROM : AT ( 0 ){
 		_start_low_rom = . ;
 		*(.text);
-		*(.text.unlikely);
+		*(.text.*);
+		*(.eh_frame);
 		_end_low_rom = . ;
 	}
 
@@ -48,9 +51,11 @@ SECTIONS {
 	.data (LOW_ROM + SIZEOF(.text) + SIZEOF(.rodata)) : AT( SIZEOF(.text) + SIZEOF(.rodata) ) {
 		_start_data = .;
 		*(.data);
+		*(.data.*);
 		*(.sdata);
 		*(.sdata2);
 		*(.got);
+		*(.got.*);
 		_end_data = .;
 	}
 

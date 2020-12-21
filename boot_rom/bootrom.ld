@@ -32,20 +32,24 @@ SECTIONS {
         _ram_location = .;
         _start_ramcopy = _end_rom;
         *(.text);
-        *(.text.unlikely);
+		*(.text.*);
+        *(.eh_frame);
         _start_checksum = _start_ramcopy - LOW_ROM;
     }
 
     .data (RAM_CODE + SIZEOF(.text)) : AT( SIZEOF(.low_rom) + SIZEOF(.text)) {
         *(.data);
+		*(.data.*);
         *(.sdata);
         *(.sdata2);
         *(.got);
+		*(.got.*);
     }
            
            .rodata ( RAM_CODE + SIZEOF(.text) + SIZEOF(.data) ) : AT ( SIZEOF(.low_rom) + SIZEOF(.text) + SIZEOF(.data)) {
         *(.rodata);
         *(.rodata.str1.1);
+		*(.rodata.str1.4);
         *(.rodata.str1.32);
         *(.rodata.cst4);
         *(.rodata.cst8);
