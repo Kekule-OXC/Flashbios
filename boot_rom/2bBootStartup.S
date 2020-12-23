@@ -730,9 +730,9 @@ MemoryChecksum:
 	.byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00
 	.byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00
 	.long _size_sha1hash
-	.long 0x00  // Will be dumped in by imagebld ->compressed_image_start;
-	.long 0x00  // Will be dumped in by imagebld ->compressed_image_size;
-	.long 0x00  // Will be dumped in by imagebld ->0 .. 256kb image, 1 .. 1MB image
+	//.long 0x00  // Will be dumped in by imagebld ->compressed_image_start;
+	//.long 0x00  // Will be dumped in by imagebld ->compressed_image_size;
+	//.long 0x00  // Will be dumped in by imagebld ->0 .. 256kb image, 1 .. 1MB image
 	
 	.org 0x40  // We have linkbase for this programm = 0x100000 + 0x40 = divisable /4 .. so CPU likes it
 tableGdt:
@@ -772,9 +772,11 @@ initaftermemcpy:
    	
    	//Clear decompressed kernel space.
    	// memset((void*)0x03A30000,0x0,0x40000)
+#if 0 // if this is done the xbox resets before booting
 	movl $0x40000, %ecx
 	movl $0x03A30000, %edi
 	rep stosl
+#endif
 
 	lidt tableIdtDescriptor
 	lgdt tableGdtDescriptor

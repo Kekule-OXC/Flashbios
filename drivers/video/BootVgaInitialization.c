@@ -84,12 +84,12 @@ void BootVgaInitializationKernelNG(CURRENT_VIDEO_MODE_DETAILS * pcurrentvideomod
 
 	// The values for hoc and voc are stolen from nvtv small mode
 
-	if(b != 0x40) {
-		pcurrentvideomodedetails->hoc = 0;
-		pcurrentvideomodedetails->voc = 0;
-	} else {
-		pcurrentvideomodedetails->hoc = 0;
-		pcurrentvideomodedetails->voc = 0;
+	if(b != 0x40) {						 //NTSC
+		pcurrentvideomodedetails->hoc = 15.11;
+		pcurrentvideomodedetails->voc = 14.81;
+	} else {							   //PAL
+		pcurrentvideomodedetails->hoc = 13.44;
+		pcurrentvideomodedetails->voc = 14.24;
 	}
 	pcurrentvideomodedetails->hoc /= 100.0;
 	pcurrentvideomodedetails->voc /= 100.0;
@@ -106,7 +106,14 @@ void BootVgaInitializationKernelNG(CURRENT_VIDEO_MODE_DETAILS * pcurrentvideomod
 	MMIO_H_OUT32 (riva.PCRTC, 0, 0x800, pcurrentvideomodedetails->m_dwFrameBufferStart);
 
 	IoOutputByte(0x80d3, 5);  // Kill all video out using an ACPI control pin
-
+   MMIO_H_OUT32(riva.PRAMDAC,0,0x884,0x0);
+	MMIO_H_OUT32(riva.PRAMDAC,0,0x888,0x0);
+	MMIO_H_OUT32(riva.PRAMDAC,0,0x88c,0x10001000);
+	MMIO_H_OUT32(riva.PRAMDAC,0,0x890,0x10000000);
+	MMIO_H_OUT32(riva.PRAMDAC,0,0x894,0x10000000);
+	MMIO_H_OUT32(riva.PRAMDAC,0,0x898,0x10000000);
+	MMIO_H_OUT32(riva.PRAMDAC,0,0x89c,0x10000000);
+	
 	if (video_encoder==ENCODER_XCALIBUR) {
 		MMIO_H_OUT32(riva.PRAMDAC,0,0x880,0x21101100);
 		
@@ -116,16 +123,14 @@ void BootVgaInitializationKernelNG(CURRENT_VIDEO_MODE_DETAILS * pcurrentvideomod
 		MMIO_H_OUT32(riva.PRAMDAC,0,0x8c4,0x40801080);
 	}
 	else {
-		MMIO_H_OUT32(riva.PRAMDAC,0,0x880,0);
+		MMIO_H_OUT32(riva.PRAMDAC,0,0x880,0);	 
+		//Other encoders use RGB	
+		MMIO_H_OUT32(riva.PRAMDAC,0,0x630,0x0);
+		MMIO_H_OUT32(riva.PRAMDAC,0,0x84c,0x0);
+		MMIO_H_OUT32(riva.PRAMDAC,0,0x8c4,0x0);
 	}
 	
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x884,0x0);
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x888,0x0);
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x88c,0x10001000);
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x890,0x10000000);
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x894,0x10000000);
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x898,0x10000000);
-	MMIO_H_OUT32(riva.PRAMDAC,0,0x89c,0x10000000);
+	
 	
 	writeCrtNv (&riva, 0, 0x14, 0x00);
 	writeCrtNv (&riva, 0, 0x17, 0xe3); // Set CRTC mode register
