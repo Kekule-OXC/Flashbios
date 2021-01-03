@@ -43,13 +43,13 @@ int NiceMenu(char **alts, int nAlts){
 					VIDEO_CURSOR_POSX=250;
 				else
 					VIDEO_CURSOR_POSX=210;
-				
+				/*  this breaks the color changes below.... relative changes work, but not assignments
 				// fix for huge resolutions
 				if ( usedVideoMode == 4 )
 						VIDEO_CURSOR_POSX+=100;
 				else if ( usedVideoMode == 3 )
 						VIDEO_CURSOR_POSX+=80;
-						
+				*/
 				VIDEO_ATTR=0xffd8d800;
 				if (i == cur)
 					VIDEO_ATTR=0xffd8d8d8;
