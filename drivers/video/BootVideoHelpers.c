@@ -2,9 +2,10 @@
 #include  "boot.h"
 #include "video.h"
 #include "memory_layout.h"
-//#include "string.h"
-#include "fontx16.h"  // brings in font struct
+#include "string.h"
 #include <stdarg.h>
+#include <stdio.h>
+#include "fontx13.h"  // brings in font struct
 
 // These are helper functions for displaying bitmap video
 // includes an antialiased (4bpp) proportional bitmap font (n x 16 pixel)
@@ -20,26 +21,13 @@
 
 // 2002-09-10  agreen@warmcat.com  created
 
-#define WIDTH_SPACE_PIXELS 5
-
 // returns number of x pixels taken up by ascii character bCharacter
 
-unsigned int BootVideoGetCharacterWidth(BYTE bCharacter, bool fDouble)
-{
-	unsigned int nStart, nWidth;
-	int nSpace=WIDTH_SPACE_PIXELS;
-	
-	if(fDouble) nSpace=8;
+unsigned int BootVideoGetCharacterWidth(BYTE bCharacter, bool fDouble) {
+    if(fDouble)
+        return (font8x8_basic_width + 1) * 2;
 
-		// we only have glyphs for 0x21 through 0x7e inclusive
-
-	if(bCharacter<0x21) return nSpace;
-	if(bCharacter>0x7e) return nSpace;
-
-	nStart=waStarts[bCharacter-0x21];
-	nWidth=waStarts[bCharacter-0x20]-nStart;
-
-	if(fDouble) return nWidth<<1; else return nWidth;
+    return font8x8_basic_width;
 }
 
 // returns number of x pixels taken up by string
@@ -56,13 +44,6 @@ unsigned int BootVideoGetStringTotalWidth(const char * szc) {
 		}
 	}
 	return nWidth;
-}
-
-// convert pixel count to size of memory in bytes required to hold it, given the character height
-
-unsigned int BootVideoFontWidthToBitmapBytecount(unsigned int uiWidth)
-{
-	return (uiWidth << 2) * uiPixelsY;
 }
 
 // 2D memcpy
@@ -150,85 +131,38 @@ int BootVideoOverlayCharacter(
 	BYTE bCharacter,
 	bool fDouble
 ) {
-	int nSpace;
-	unsigned int n, nStart, nWidth, y, nHeight
-//		nOpaquenessMultiplied,
-//		nTransparentnessMultiplied
-	;
-	BYTE b=0, b1; // *pbColour=(BYTE *)&rgbaColourAndOpaqueness;
-	BYTE * pbaDestStart;
-
-		// we only have glyphs for 0x21 through 0x7e inclusive
+	BYTE* pbaDestStart;
 
 	if(bCharacter=='\t') {
-		DWORD dw=((DWORD)pdwaTopLeftDestination) % m_dwCountBytesPerLineDestination;
-		DWORD dw1=((dw+1)%(32<<2));  // distance from previous boundary
-		return ((32<<2)-dw1)>>2;
+		DWORD dw = ((DWORD)pdwaTopLeftDestination) % m_dwCountBytesPerLineDestination;
+		DWORD dw1 = ((dw + 1) % (32 << 2)); // distance from previous boundary
+		return ((32 << 2) - dw1) >> 2;
 	}
-	nSpace=WIDTH_SPACE_PIXELS;
-	if(fDouble) nSpace=8;
-	if(bCharacter<'!') return nSpace;
-	if(bCharacter>'~') return nSpace;
 
-	nStart=waStarts[bCharacter-(' '+1)];
-	nWidth=waStarts[bCharacter-' ']-nStart;
-	nHeight=uiPixelsY;
+	BYTE scale;
+	(fDouble) ? (scale = 2) : (scale = 1);
+	BYTE height = font8x8_basic_height * scale;
+	BYTE width = BootVideoGetCharacterWidth(bCharacter, fDouble);
 
-	if(fDouble) { nWidth<<=1; nHeight<<=1; }
-
-//	nStart=0;
-//	nWidth=300;
+	if (bCharacter<'!') return width;
+	if (bCharacter>'~') return width;
 
 	pbaDestStart=((BYTE *)pdwaTopLeftDestination);
-
-	for(y=0;y<nHeight;y++) {
-		BYTE * pbaDest=pbaDestStart;
-		int n1=nStart;
-
-		for(n=0;n<nWidth;n++) {
-			b=baCharset[n1>>1];
-			if(!(n1&1)) {
-				b1=b>>4;
-			} else {
-				b1=b&0x0f;
+	for(int y = height - 1; y >= 0; y--) {
+		BYTE* pbaDest=pbaDestStart;
+		BYTE b = font8x8_basic[bCharacter][y / scale];
+		for(int i = (width - 1); i >= 0; i--) {
+			if ((b >> (i / scale)) & 0x01) {
+				pbaDest[0] = (rgbaColourAndOpaqueness>>0)  & 0xFF;
+				pbaDest[1] = (rgbaColourAndOpaqueness>>8)  & 0xFF;
+				pbaDest[2] = (rgbaColourAndOpaqueness>>16) & 0xFF;
+				pbaDest[3] = (rgbaColourAndOpaqueness>>24) & 0xFF;
 			}
-			if(fDouble) {
-				if(n & 1) n1++;
-			} else {
-				n1++;
-			}
-
-
-
-//			nOpaquenessMultiplied=(((int)(unsigned int)(pbColour[3]))*(int)b1)/15;
-//			nTransparentnessMultiplied=(0xff-nOpaquenessMultiplied);
-
-			if(b1) {
-				*pbaDest=(BYTE)((b1*(rgbaColourAndOpaqueness&0xff))>>4); pbaDest++;
-				*pbaDest=(BYTE)((b1*((rgbaColourAndOpaqueness>>8)&0xff))>>4); pbaDest++;
-				*pbaDest=(BYTE)((b1*((rgbaColourAndOpaqueness>>16)&0xff))>>4); pbaDest++;
-				*pbaDest++=0xff;
-			} else {
-				pbaDest+=4;
-			}
-//			*pbaDest++=0x80;
-
-
-//			*pbaDest=(BYTE)0xff; pbaDest++;
-//			*pbaDest=(BYTE)(((nOpaquenessMultiplied * (unsigned int)pbColour[0]) + (nTransparentnessMultiplied * (unsigned int)*pbaDest))/255); pbaDest++;
-//			*pbaDest=(BYTE)(((nOpaquenessMultiplied * (unsigned int)pbColour[1]) + (nTransparentnessMultiplied * (unsigned int)*pbaDest))/255); pbaDest++;
-//			*pbaDest=(BYTE)(((nOpaquenessMultiplied * (unsigned int)pbColour[2]) + (nTransparentnessMultiplied * (unsigned int)*pbaDest))/255); pbaDest++;
-
-		}
-		if(fDouble) {
-			if(y&1) nStart+=uiPixelsX;
-		} else {
-			nStart+=uiPixelsX;
+			pbaDest += sizeof(DWORD);
 		}
 		pbaDestStart+=m_dwCountBytesPerLineDestination;
 	}
-
-	return nWidth;
+	return width;
 }
 
 // usable for direct write or for prebuffered write
@@ -452,6 +386,10 @@ void BootVideoChunkedPrint(const char * szBuffer) {
 	int n=0;
 	int nDone=0;
 
+	//CURSOR X POSITION MUST BE 4 BYTE ALIGNED
+	if(VIDEO_CURSOR_POSX % 4 != 0)
+		 VIDEO_CURSOR_POSX -= VIDEO_CURSOR_POSX % 4;
+
 	while (szBuffer[n] != 0)
 	{
 		if(szBuffer[n]=='\n') {
@@ -460,7 +398,7 @@ void BootVideoChunkedPrint(const char * szBuffer) {
 				currentvideomodedetails.m_dwWidthInPixels*4, VIDEO_ATTR, &szBuffer[nDone]
 			);
 			nDone=n+1;
-			VIDEO_CURSOR_POSY+=16; 
+			VIDEO_CURSOR_POSY+=font8x8_basic_height + 2;
 			VIDEO_CURSOR_POSX=currentvideomodedetails.m_dwMarginXInPixelsRecommended<<2;
 		}
 		n++;
@@ -474,7 +412,7 @@ void BootVideoChunkedPrint(const char * szBuffer) {
 		if (VIDEO_CURSOR_POSX > (currentvideomodedetails.m_dwWidthInPixels - 
 			currentvideomodedetails.m_dwMarginXInPixelsRecommended) <<2)
 		{
-			VIDEO_CURSOR_POSY+=16; 
+			VIDEO_CURSOR_POSY+=font8x8_basic_height + 2;
 			VIDEO_CURSOR_POSX=currentvideomodedetails.m_dwMarginXInPixelsRecommended<<2;
 		}
 		
