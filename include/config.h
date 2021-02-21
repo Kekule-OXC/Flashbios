@@ -2,7 +2,7 @@
 
 #define PROG_NAME "FlashBIOS"
 
-#define VERSION "3.0.3-XBlast"
+#define VERSION "3.0.3"
 
 // selects between the supported video modes, see boot.h for enum listing those available
 //#define VIDEO_PREFERRED_MODE VIDEO_MODE_800x600
