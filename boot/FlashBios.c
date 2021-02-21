@@ -3,6 +3,8 @@
 #include "memory_layout.h"
 #include "BootFATX.h"
 #include "BootIde.h"
+#include "ConfirmDialog.h"
+#include "video.h"
 
 #define XBOX_SMB_IO_BASE 0xC000
 #define XBOX_SMB_HOST_ADDRESS       (0x4 + XBOX_SMB_IO_BASE)
@@ -109,6 +111,11 @@ int LockUnlockHDD(int nIndexDrive, int command){
 
 	uIoBase = tsaHarddiskInfo[nIndexDrive].m_fwPortBase;
 	
+	if(ConfirmDialog("Confirm Lock HDD?", 1))
+        {
+            return false;
+        }
+		
 	// first 0x30 bytes from EEPROM image we picked up earlier
 	memcpy(&baEeprom[0], &eeprom, 0x30);
 
@@ -143,6 +150,12 @@ int LockUnlockHDD(int nIndexDrive, int command){
 }
 
 void UnlockHDD(void){
+	if(ConfirmDialog("Confirm UnLock HDD?", 1))
+        {
+            return false;
+        }
+		
+	
 	printk("\n");
 	printk ("Unlocking HDD...\n");
 	LockUnlockHDD(0,IDE_CMD_SECURITY_DISABLE);
@@ -180,11 +193,12 @@ void HddFlash(){
 	int offset;
 	char *alts[258];
 	int n = 1;
+	int nTempCursorY = VIDEO_CURSOR_POSY;
 	
 	partition = OpenFATXPartition(0,SECTOR_SYSTEM,SYSTEM_SIZE);
 
 	alts[0] = "Back to menu";
-
+	printk("\n\n");
 	// Messy, but fun!
 	bioscluster = FATXFindDir(partition, FATX_ROOT_FAT_CLUSTER, "bios");
 	if (bioscluster == -1 || bioscluster == 1) {
@@ -203,7 +217,7 @@ void HddFlash(){
 	} else {
 		n = FATXListDir(partition, bioscluster, &alts[1], 256, "C:\\bios\\");
 	}
-
+	VIDEO_ATTR=0xff0000ff;
 	n = NiceMenu (alts, n+1);
 
 	if (n > 0) {
@@ -236,6 +250,15 @@ void HddFlash(){
 				;
 		}
 #endif
+
+
+		if(ConfirmDialog("Are you sure you want to flash?", 1))
+		{
+			BootVideoClearScreen(&jpegBackdrop, nTempCursorY, 0xffff);//VIDEO_CURSOR_POSY+1);
+			VIDEO_CURSOR_POSY=nTempCursorY;
+			return false;
+		}
+		
 		res = BootReflashAndReset((BYTE*)0x100000,offset,fileinfo.fileSize);
 		printk("flash failed: %d\n",res);
 	}

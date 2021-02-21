@@ -91,6 +91,7 @@ OBJECTS-CROM += $(TOPDIR)/obj/vsprintf.o
 #OBJECTS-CROM += $(TOPDIR)/obj/BootStartBios.o
 OBJECTS-CROM += $(TOPDIR)/obj/NiceMenu.o
 OBJECTS-CROM += $(TOPDIR)/obj/FlashBios.o
+OBJECTS-CROM += $(TOPDIR)/obj/ConfirmDialog.o
 OBJECTS-CROM += $(TOPDIR)/obj/setup.o
 OBJECTS-CROM += $(TOPDIR)/obj/BootFilesystemIso9660.o
 OBJECTS-CROM += $(TOPDIR)/obj/BootLibrary.o
@@ -169,6 +170,7 @@ OBJECTS-CROM += $(TOPDIR)/obj/etherboot_config.o
 #OBJECTS-CROM += $(TOPDIR)/obj/xbox_main.o
 #OBJECTS-CROM += $(TOPDIR)/obj/elf.o
 #endif
+
 
 SUBDIRS += lwip
 OBJECTS-LWIP = $(addprefix $(TOPDIR)/obj/,mem.o memp.o netif.o pbuf.o raw.o stats.o sys.o tcp.o tcp_in.o tcp_out.o udp.o dhcp.o icmp.o ip.o inet.o ip_addr.o ip_frag.o etharp.o ebd.o webserver.o)
